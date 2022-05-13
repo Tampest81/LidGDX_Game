@@ -39,10 +39,17 @@ public class libgame extends ApplicationAdapter {
 	private float alturaDispositivo;
 	private float variacao = 0;
 	private float gravidade = 2;
+
+	private Texture coin;
+	private Rectangle coinCollider;
+	private float coinPosicaoHorizontal;
+	private float coinPosicaoVertical;
+
 	private float posicaoInicialVeticalPassaro = 0;
 	private float posicaoCanoHorizontal;
 	private float posicaoCanoVertical;
 	private float espacoEntreCanos;
+
 	private Random random;
 	private int pontos = 0;
 	private int pontuacaoMaxima = 0;
@@ -97,6 +104,8 @@ public class libgame extends ApplicationAdapter {
 		canoTopo = new Texture("cano_topo_maior.png");
 		gameOver = new Texture("game_over.png");
 
+		coin = new Texture("coin.png");
+
 	}
 	// Define os objetos inicializados
 	private void inicializaObjetos()
@@ -108,6 +117,9 @@ public class libgame extends ApplicationAdapter {
 		alturaDispositivo = VIRTUAL_HEIGHT;
 		posicaoInicialVeticalPassaro = alturaDispositivo / 2;
 		posicaoCanoHorizontal = larguraDispositivo;
+
+		coinPosicaoHorizontal = larguraDispositivo;
+
 		espacoEntreCanos = 350;
 		// Define os textos, instancia eles, define uma cor e o tamanho
 		textoPontuacao = new BitmapFont();
@@ -126,6 +138,9 @@ public class libgame extends ApplicationAdapter {
 		circuloPassaro = new Circle();
 		retanguloCanoBaixo = new Rectangle();
 		retanguloCanoCima = new Rectangle();
+
+		coinCollider = new Rectangle();
+
 		// Define os audios
 		somVoando = Gdx.audio.newSound( Gdx.files.internal("som_asa.wav"));
 		somColisao = Gdx.audio.newSound( Gdx.files.internal("som_batida.wav"));
@@ -163,13 +178,18 @@ public class libgame extends ApplicationAdapter {
 				gravidade = -15;
 				somVoando.play();
 			}
-			// Instancia os canos e a sua posição
+			// Randomiza a posição dos canos
 			posicaoCanoHorizontal -= Gdx.graphics.getDeltaTime() * 200;
+			coinPosicaoHorizontal -= Gdx.graphics.getDeltaTime() * 200;
 
 			if (posicaoCanoHorizontal < -canoTopo.getWidth())
 			{
 				posicaoCanoHorizontal = larguraDispositivo;
 				posicaoCanoVertical = random.nextInt(400)-200;
+
+				coinPosicaoHorizontal = larguraDispositivo;
+				coinPosicaoVertical = random.nextInt(400)-300;
+
 				passouCano = false;
 			}
 			// Caso o personagem tenha uma posição Y > 0 e o jogador dê um input, ele irá realizar um "pulo"
@@ -225,8 +245,15 @@ public class libgame extends ApplicationAdapter {
 		// Colisor do cano de cima
 		retanguloCanoCima.set
 				(
-						posicaoCanoHorizontal, alturaDispositivo / 2 + espacoEntreCanos / 2 + posicaoCanoVertical,
+						posicaoCanoHorizontal,
+						alturaDispositivo / 2 + espacoEntreCanos / 2 + posicaoCanoVertical,
 						canoTopo.getWidth(), canoTopo.getHeight()
+				);
+		coinCollider.set
+				(
+					coinPosicaoHorizontal,
+					alturaDispositivo / 2 + posicaoCanoVertical,
+					coin.getWidth(), coin.getHeight()
 				);
 
 		// Flags que definem se ocorreu uma sobreposição dos colisores
@@ -249,6 +276,14 @@ public class libgame extends ApplicationAdapter {
 		batch.setProjectionMatrix(camera.combined);
 		batch.begin();
 		batch.draw(fundo,0,0,larguraDispositivo,alturaDispositivo);
+
+		batch.draw
+				(
+						coin,
+						larguraDispositivo/2,
+						alturaDispositivo/2
+				);
+
 		// Desenha o passaro
 		batch.draw
 				(
@@ -256,7 +291,7 @@ public class libgame extends ApplicationAdapter {
 				50 + posicaoHorizontalPassaro,
 				posicaoInicialVeticalPassaro
 				);
-		// Desenha o cano
+		// Desenha o cano de baixo
 		batch.draw
 				(
 				canoBaixo,
@@ -269,7 +304,7 @@ public class libgame extends ApplicationAdapter {
 						+
 						posicaoCanoVertical
 				);
-
+		// Desenha o cano de cima
 		batch.draw
 				(
 				canoTopo,
@@ -280,7 +315,7 @@ public class libgame extends ApplicationAdapter {
 						+
 						posicaoCanoVertical
 				);
-
+		// Desenha o texto da pontuação
 		textoPontuacao.draw
 				(
 				batch,
@@ -289,7 +324,7 @@ public class libgame extends ApplicationAdapter {
 				alturaDispositivo - 110
 				);
 
-
+		// Se o estado do jogo for 2 (2 = GameOver), irá desenhar os textos de gameover na tela
 		if (estadoJogo == 2)
 		{
 			batch.draw(gameOver, larguraDispositivo / 2 - gameOver.getWidth() / 2,
@@ -306,6 +341,7 @@ public class libgame extends ApplicationAdapter {
 
 	public void validarPontos()
 	{
+		// Caso o jogador passe o cano, ele irá ganhar pontos
 		if(posicaoCanoHorizontal < 50-passaros[0].getWidth())
 		{
 			if (!passouCano)
