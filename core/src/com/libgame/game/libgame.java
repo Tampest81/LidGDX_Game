@@ -21,6 +21,8 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import java.util.Random;
 
 public class libgame extends ApplicationAdapter {
+
+	// Atribuição das variáveis
 	private SpriteBatch batch;
 	private Texture[] passaros;
 	private Texture fundo;
@@ -63,16 +65,18 @@ public class libgame extends ApplicationAdapter {
 	private final float VIRTUAL_WIDTH = 720;
 	private final float VIRTUAL_HEIGHT = 1200;
 
+	// Start
 	@Override
 	public void create ()
 	{
 		inicializarTexturas();
 		inicializaObjetos();
 	}
-
+	// Update
 	@Override
 	public void render ()
 	{
+		// Limpeza de resíduos.
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
 		verificarEstadoJogo();
@@ -80,7 +84,7 @@ public class libgame extends ApplicationAdapter {
 		desenharTexturas();
 		detectarColisoes();
 	}
-
+	// Instancia as sprites e tambem adiciona as sprites p/ a animação
 	private void inicializarTexturas()
 	{
 		passaros = new Texture[3];
@@ -94,18 +98,18 @@ public class libgame extends ApplicationAdapter {
 		gameOver = new Texture("game_over.png");
 
 	}
-
+	// Define os objetos inicializados
 	private void inicializaObjetos()
 	{
 		batch = new SpriteBatch();
 		random = new Random();
-
+		// Define algumas variáveis
 		larguraDispositivo = VIRTUAL_WIDTH;
 		alturaDispositivo = VIRTUAL_HEIGHT;
 		posicaoInicialVeticalPassaro = alturaDispositivo / 2;
 		posicaoCanoHorizontal = larguraDispositivo;
 		espacoEntreCanos = 350;
-
+		// Define os textos, instancia eles, define uma cor e o tamanho
 		textoPontuacao = new BitmapFont();
 		textoPontuacao.setColor(Color.WHITE);
 		textoPontuacao.getData().setScale(10);
@@ -117,12 +121,12 @@ public class libgame extends ApplicationAdapter {
 		textoMelhorPontuacao = new BitmapFont();
 		textoMelhorPontuacao.setColor(Color.RED);
 		textoMelhorPontuacao.getData().setScale(2);
-
+		// Define hitboxes
 		shapeRenderer = new ShapeRenderer();
 		circuloPassaro = new Circle();
 		retanguloCanoBaixo = new Rectangle();
 		retanguloCanoCima = new Rectangle();
-
+		// Define os audios
 		somVoando = Gdx.audio.newSound( Gdx.files.internal("som_asa.wav"));
 		somColisao = Gdx.audio.newSound( Gdx.files.internal("som_batida.wav"));
 		somPontuacao = Gdx.audio.newSound( Gdx.files.internal("som_pontos.wav"));
@@ -137,23 +141,29 @@ public class libgame extends ApplicationAdapter {
 
 	private void verificarEstadoJogo()
 	{
+		// Verifica o input do usuário (Touch)
 		boolean toqueTela = Gdx.input.justTouched();
+		// Caso o estado do jogo seja 0 e receba um input.... (0 = Aguardando o usuário receber o input)
 		if(estadoJogo == 0)
 		{
-			if(toqueTela) {
+			// Caso receba o input, faz o personagem pular uma vez e muda de estado.
+			if(toqueTela)
+			{
 				gravidade = -15;
 				estadoJogo = 1;
 				somVoando.play();
 			}
 		}
+		// Caso o estado do jogo seja 1 e receba um input.... (1 = Quando está em partida e recebe o input)
 		else if (estadoJogo == 1)
 		{
+			// Caso receba o input, faz o personagem pular uma vez
 			if (toqueTela)
 			{
 				gravidade = -15;
 				somVoando.play();
 			}
-
+			// Instancia os canos e a sua posição
 			posicaoCanoHorizontal -= Gdx.graphics.getDeltaTime() * 200;
 
 			if (posicaoCanoHorizontal < -canoTopo.getWidth())
@@ -162,14 +172,18 @@ public class libgame extends ApplicationAdapter {
 				posicaoCanoVertical = random.nextInt(400)-200;
 				passouCano = false;
 			}
+			// Caso o personagem tenha uma posição Y > 0 e o jogador dê um input, ele irá realizar um "pulo"
 			if (posicaoInicialVeticalPassaro > 0 || toqueTela)
 			{
 				posicaoInicialVeticalPassaro = posicaoInicialVeticalPassaro - gravidade;
 			}
+			// Gravidade
 			gravidade++;
 		}
+		// Caso o estado do jogo seja 2.... (2 = Tela de GameOver)
 		else if(estadoJogo == 2)
 		{
+			// Caso a pontuação atual seja maior q a potuação máxima atingida, a pontuação máxima será alterada para a atual
 			if(pontos > pontuacaoMaxima)
 			{
 				pontuacaoMaxima = pontos;
@@ -178,6 +192,7 @@ public class libgame extends ApplicationAdapter {
 			}
 			posicaoHorizontalPassaro -= Gdx.graphics.getDeltaTime()*500;
 
+			// Caso o usuário dê o input, reinicia o jogo, redefine tudo para o padrão
 			if (toqueTela)
 			{
 				estadoJogo = 0;
@@ -190,29 +205,35 @@ public class libgame extends ApplicationAdapter {
 		}
 	}
 
+	// Metodo que detecta Colisoes
 	private void detectarColisoes()
 	{
+		// Colisor do passaro
 		circuloPassaro.set
 				(
 						50 + posicaoHorizontalPassaro + passaros[0].getWidth() / 2,
 						posicaoInicialVeticalPassaro + passaros[0].getHeight() / 2,
 						passaros[0].getWidth() / 2
 				);
+		// Colisor do cano de baixo
 		retanguloCanoBaixo.set
 				(
 						posicaoCanoHorizontal,
 						alturaDispositivo / 2 - canoBaixo.getHeight() - espacoEntreCanos / 2 + posicaoCanoVertical,
 						canoBaixo.getWidth(), canoBaixo.getHeight()
 				);
+		// Colisor do cano de cima
 		retanguloCanoCima.set
 				(
 						posicaoCanoHorizontal, alturaDispositivo / 2 + espacoEntreCanos / 2 + posicaoCanoVertical,
 						canoTopo.getWidth(), canoTopo.getHeight()
 				);
 
+		// Flags que definem se ocorreu uma sobreposição dos colisores
 		boolean colidiuCanoCima = Intersector.overlaps(circuloPassaro, retanguloCanoCima);
 		boolean colidiuCanoBaixo = Intersector.overlaps(circuloPassaro, retanguloCanoBaixo);
 
+		// Caso ocorra alguma sobreposição, irá mudar o estado do jogo para 2 (2 = Tela de Game Over)
 		if (colidiuCanoCima || colidiuCanoBaixo)
 		{
 			if (estadoJogo == 1)
@@ -228,14 +249,46 @@ public class libgame extends ApplicationAdapter {
 		batch.setProjectionMatrix(camera.combined);
 		batch.begin();
 		batch.draw(fundo,0,0,larguraDispositivo,alturaDispositivo);
-		batch.draw(passaros[(int) variacao],
-				50 + posicaoHorizontalPassaro,posicaoInicialVeticalPassaro);
-		batch.draw(canoBaixo, posicaoCanoHorizontal,
-				alturaDispositivo / 2 - canoBaixo.getHeight() - espacoEntreCanos/2 + posicaoCanoVertical);
-		batch.draw(canoTopo,posicaoCanoHorizontal,
-				alturaDispositivo / 2 + espacoEntreCanos / 2 + posicaoCanoVertical);
-		textoPontuacao.draw(batch, String.valueOf(pontos), larguraDispositivo/2,
-				alturaDispositivo - 110);
+		// Desenha o passaro
+		batch.draw
+				(
+				passaros[(int) variacao],
+				50 + posicaoHorizontalPassaro,
+				posicaoInicialVeticalPassaro
+				);
+		// Desenha o cano
+		batch.draw
+				(
+				canoBaixo,
+				posicaoCanoHorizontal,
+				alturaDispositivo / 2
+						-
+						canoBaixo.getHeight()
+						-
+						espacoEntreCanos/2
+						+
+						posicaoCanoVertical
+				);
+
+		batch.draw
+				(
+				canoTopo,
+				posicaoCanoHorizontal,
+				alturaDispositivo / 2
+						+
+						espacoEntreCanos / 2
+						+
+						posicaoCanoVertical
+				);
+
+		textoPontuacao.draw
+				(
+				batch,
+				String.valueOf(pontos),
+				larguraDispositivo/2,
+				alturaDispositivo - 110
+				);
+
 
 		if (estadoJogo == 2)
 		{
