@@ -309,6 +309,9 @@ public class libgame extends ApplicationAdapter {
 			// Gambiarra para retirar a moeda da tela
 			coinPosicaoHorizontal -= Gdx.graphics.getDeltaTime() * 90000;
 
+			// Toca o som da moeda
+			somPontuacao.play();
+
 			// Verifica se é moeda de prata ou de ouro
 			if(randomValue == 1) {
 				pontos += 10;
