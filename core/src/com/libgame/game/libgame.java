@@ -103,7 +103,7 @@ public class libgame extends ApplicationAdapter {
 		desenharTexturas();
 		detectarColisoes();
 	}
-	// Faz a referencia das texturas (variáveis) com as texturas dentro do jogo
+	// Pega as texturas dentro da pasta Assets e atribui para dentro da varíavel
 	private void inicializarTexturas()
 	{
 		passaros = new Texture[3];
@@ -170,6 +170,10 @@ public class libgame extends ApplicationAdapter {
 		viewport = new StretchViewport(VIRTUAL_WIDTH,VIRTUAL_HEIGHT,camera);
 	}
 
+	// Verifica o estado do jogo, sendo :
+	// 0 -> Aguardando o input do jogador
+	// 1 -> In game
+	// 2 -> Game Over
 	private void verificarEstadoJogo()
 	{
 		// Verifica o input do usuário (Touch)
@@ -189,15 +193,20 @@ public class libgame extends ApplicationAdapter {
 		else if (estadoJogo == 1)
 		{
 			// Caso receba o input, faz o personagem pular uma vez
+			// Toca um som toda vez que ele pula
 			if (toqueTela)
 			{
 				gravidade = -15;
 				somVoando.play();
 			}
-			// Gravidade horizontal
+
+			// Gravidade horizontal aplicada na moeda e no cano
 			posicaoCanoHorizontal -= Gdx.graphics.getDeltaTime() * 200;
 			coinPosicaoHorizontal -= Gdx.graphics.getDeltaTime() * 200;
 
+			// Se o cano chegar no limite esquerdo da tela (logo atrás do jogador)
+			// Faz o objeto aparecer na direito com uma altura aleatória
+			// Desativa a verificação passouCano, que é utilizado para a adição da pontuação ao passar o cano
 			if (posicaoCanoHorizontal < -canoTopo.getWidth())
 			{
 				posicaoCanoHorizontal = larguraDispositivo;
@@ -205,9 +214,9 @@ public class libgame extends ApplicationAdapter {
 
 				passouCano = false;
 			}
-
 			if (coinPosicaoHorizontal < -coin.getWidth())
 			{
+				// Randomiza um valor e retorna ele (entre 0-1)
 				randomValue = Math.floor(Math.random()*2);
 				if (randomValue == 0)
 				{
@@ -256,7 +265,7 @@ public class libgame extends ApplicationAdapter {
 		}
 	}
 
-	// Metodo que detecta Colisoes
+	// Metodo que detecta e gera as colisões e colisores
 	private void detectarColisoes()
 	{
 		// Colisor do passaro
@@ -280,6 +289,7 @@ public class libgame extends ApplicationAdapter {
 						alturaDispositivo / 2 + espacoEntreCanos / 2 + posicaoCanoVertical,
 						canoTopo.getWidth(), canoTopo.getHeight()
 				);
+		// Colisor da moeda
 		coinCollider.set
 				(
 						coinPosicaoHorizontal + coinAtual.getWidth() / 2,
@@ -293,11 +303,13 @@ public class libgame extends ApplicationAdapter {
 
 		boolean colidiuMoeda = Intersector.overlaps(circuloPassaro,coinCollider);
 
-		// Caso ocorra alguma sobreposição, irá mudar o estado do jogo para 2 (2 = Tela de Game Over)
-
+		// Se colidir com a moeda...
 		if(colidiuMoeda)
 		{
+			// Gambiarra para retirar a moeda da tela
 			coinPosicaoHorizontal -= Gdx.graphics.getDeltaTime() * 90000;
+
+			// Verifica se é moeda de prata ou de ouro
 			if(randomValue == 1) {
 				pontos += 10;
 			}
@@ -305,6 +317,7 @@ public class libgame extends ApplicationAdapter {
 				pontos += 5;
 			}
 		}
+		// Caso ocorra alguma sobreposição do player com um cano, irá mudar o estado do jogo para 2 (2 = Tela de Game Over)
 		if (colidiuCanoCima || colidiuCanoBaixo)
 		{
 			if (estadoJogo == 1)
@@ -314,13 +327,17 @@ public class libgame extends ApplicationAdapter {
 			}
 		}
 	}
-
+	// Método que desenha os objetos na tela
 	private void desenharTexturas()
 	{
+
 		batch.setProjectionMatrix(camera.combined);
 		batch.begin();
+
+		// Desenha o fundo
 		batch.draw(fundo,0,0,larguraDispositivo,alturaDispositivo);
 
+		// Desenha a moeda
 		batch.draw
 				(
 						coinAtual,
@@ -370,7 +387,7 @@ public class libgame extends ApplicationAdapter {
 				);
 
 
-
+		// Se o estado do jogo for 0, irá desenhar a Logo
 		if (estadoJogo == 0)
 		{
 			batch.draw(logo, larguraDispositivo / 2 - logo.getWidth() / 2,
@@ -404,7 +421,7 @@ public class libgame extends ApplicationAdapter {
 			}
 		}
 
-
+		// Faz a animação do jogador e o seu tempo entre as animações
 		variacao += Gdx.graphics.getDeltaTime() * 10;
 
 		if (variacao > 3)
