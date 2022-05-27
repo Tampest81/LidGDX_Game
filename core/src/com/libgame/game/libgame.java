@@ -22,28 +22,35 @@ import java.util.Random;
 
 public class libgame extends ApplicationAdapter {
 
-	// Atribuição das variáveis
+	// Variáveis das texturas
 	private SpriteBatch batch;
 	private Texture[] passaros;
 	private Texture fundo;
 	private Texture canoBaixo;
 	private Texture canoTopo;
 	private Texture gameOver;
+	private Texture logo;
 
+	private Texture coinAtual;
+	private Texture coin;
+
+	// Variáveis para os colisores
 	private ShapeRenderer shapeRenderer;
 	private Circle circuloPassaro;
 	private Rectangle retanguloCanoCima;
 	private Rectangle retanguloCanoBaixo;
+	private Rectangle coinCollider;
 
+	// Variáveis para determinar a dimensão do dispositivo
 	private float larguraDispositivo;
 	private float alturaDispositivo;
 	private float variacao = 0;
 	private float gravidade = 2;
 
-	private Texture coin;
-	private Rectangle coinCollider;
 	private float coinPosicaoHorizontal;
 	private float coinPosicaoVertical;
+
+	private Texture coinSilver;
 
 	private float posicaoInicialVeticalPassaro = 0;
 	private float posicaoCanoHorizontal;
@@ -57,10 +64,12 @@ public class libgame extends ApplicationAdapter {
 	private int estadoJogo = 0;
 	private float posicaoHorizontalPassaro = 0;
 
+	// Variáveis para a fonte dos textos
 	BitmapFont textoPontuacao;
 	BitmapFont textoReinciar;
 	BitmapFont textoMelhorPontuacao;
 
+	// Variáveis para os sons
 	Sound somVoando;
 	Sound somColisao;
 	Sound somPontuacao;
@@ -72,26 +81,29 @@ public class libgame extends ApplicationAdapter {
 	private final float VIRTUAL_WIDTH = 720;
 	private final float VIRTUAL_HEIGHT = 1200;
 
-	// Start
+	double randomValue;
+
+	// Semelhante ao Start da unity, será chamado uma vez no começo da aplicação
 	@Override
 	public void create ()
 	{
 		inicializarTexturas();
 		inicializaObjetos();
 	}
-	// Update
+	// Semelhante ao Update da unity, será chamado várias vezes por segundo
 	@Override
 	public void render ()
 	{
 		// Limpeza de resíduos.
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
+		// Métodos para o jogo poder funcionar
 		verificarEstadoJogo();
 		validarPontos();
 		desenharTexturas();
 		detectarColisoes();
 	}
-	// Instancia as sprites e tambem adiciona as sprites p/ a animação
+	// Faz a referencia das texturas (variáveis) com as texturas dentro do jogo
 	private void inicializarTexturas()
 	{
 		passaros = new Texture[3];
@@ -104,12 +116,16 @@ public class libgame extends ApplicationAdapter {
 		canoTopo = new Texture("cano_topo_maior.png");
 		gameOver = new Texture("game_over.png");
 
+		logo = new Texture("logo.png");
+
 		coin = new Texture("coin.png");
+		coinSilver = new Texture("coin_silver.png");
 
 	}
 	// Define os objetos inicializados
 	private void inicializaObjetos()
 	{
+		coinAtual = coinSilver;
 		batch = new SpriteBatch();
 		random = new Random();
 		// Define algumas variáveis
@@ -118,7 +134,7 @@ public class libgame extends ApplicationAdapter {
 		posicaoInicialVeticalPassaro = alturaDispositivo / 2;
 		posicaoCanoHorizontal = larguraDispositivo;
 
-		coinPosicaoHorizontal = larguraDispositivo;
+		coinPosicaoHorizontal = posicaoCanoHorizontal + larguraDispositivo / 2;
 
 		espacoEntreCanos = 350;
 		// Define os textos, instancia eles, define uma cor e o tamanho
@@ -178,7 +194,7 @@ public class libgame extends ApplicationAdapter {
 				gravidade = -15;
 				somVoando.play();
 			}
-			// Randomiza a posição dos canos
+			// Gravidade horizontal
 			posicaoCanoHorizontal -= Gdx.graphics.getDeltaTime() * 200;
 			coinPosicaoHorizontal -= Gdx.graphics.getDeltaTime() * 200;
 
@@ -187,17 +203,32 @@ public class libgame extends ApplicationAdapter {
 				posicaoCanoHorizontal = larguraDispositivo;
 				posicaoCanoVertical = random.nextInt(400)-200;
 
-				coinPosicaoHorizontal = larguraDispositivo;
-				coinPosicaoVertical = random.nextInt(400)-300;
-
 				passouCano = false;
 			}
+
+			if (coinPosicaoHorizontal < -coin.getWidth())
+			{
+				randomValue = Math.floor(Math.random()*2);
+				if (randomValue == 0)
+				{
+					coinAtual = coinSilver;
+				}
+				else if (randomValue == 1)
+				{
+					coinAtual = coin;
+				}
+
+				coinPosicaoHorizontal = larguraDispositivo;
+				coinPosicaoVertical = random.nextInt(400)-200;
+			}
+
+
 			// Caso o personagem tenha uma posição Y > 0 e o jogador dê um input, ele irá realizar um "pulo"
 			if (posicaoInicialVeticalPassaro > 0 || toqueTela)
 			{
 				posicaoInicialVeticalPassaro = posicaoInicialVeticalPassaro - gravidade;
 			}
-			// Gravidade
+			// Gravidade vertical para o player
 			gravidade++;
 		}
 		// Caso o estado do jogo seja 2.... (2 = Tela de GameOver)
@@ -251,16 +282,29 @@ public class libgame extends ApplicationAdapter {
 				);
 		coinCollider.set
 				(
-					coinPosicaoHorizontal,
-					alturaDispositivo / 2 + posicaoCanoVertical,
-					coin.getWidth(), coin.getHeight()
+						coinPosicaoHorizontal + coinAtual.getWidth() / 2,
+						coinPosicaoVertical + coinAtual.getHeight() / 2,
+						coinAtual.getWidth()/2,coinAtual.getHeight()/2
 				);
 
 		// Flags que definem se ocorreu uma sobreposição dos colisores
 		boolean colidiuCanoCima = Intersector.overlaps(circuloPassaro, retanguloCanoCima);
 		boolean colidiuCanoBaixo = Intersector.overlaps(circuloPassaro, retanguloCanoBaixo);
 
+		boolean colidiuMoeda = Intersector.overlaps(circuloPassaro,coinCollider);
+
 		// Caso ocorra alguma sobreposição, irá mudar o estado do jogo para 2 (2 = Tela de Game Over)
+
+		if(colidiuMoeda)
+		{
+			coinPosicaoHorizontal -= Gdx.graphics.getDeltaTime() * 90000;
+			if(randomValue == 1) {
+				pontos += 10;
+			}
+			else if (randomValue == 0){
+				pontos += 5;
+			}
+		}
 		if (colidiuCanoCima || colidiuCanoBaixo)
 		{
 			if (estadoJogo == 1)
@@ -279,10 +323,11 @@ public class libgame extends ApplicationAdapter {
 
 		batch.draw
 				(
-						coin,
-						larguraDispositivo/2,
-						alturaDispositivo/2
+						coinAtual,
+						coinPosicaoHorizontal,
+						coinPosicaoVertical
 				);
+
 
 		// Desenha o passaro
 		batch.draw
@@ -324,6 +369,13 @@ public class libgame extends ApplicationAdapter {
 				alturaDispositivo - 110
 				);
 
+
+
+		if (estadoJogo == 0)
+		{
+			batch.draw(logo, larguraDispositivo / 2 - logo.getWidth() / 2,
+					alturaDispositivo /1.5f);
+		}
 		// Se o estado do jogo for 2 (2 = GameOver), irá desenhar os textos de gameover na tela
 		if (estadoJogo == 2)
 		{
@@ -351,6 +403,7 @@ public class libgame extends ApplicationAdapter {
 				somPontuacao.play();
 			}
 		}
+
 
 		variacao += Gdx.graphics.getDeltaTime() * 10;
 
